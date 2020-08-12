@@ -39,3 +39,4 @@ Invoke the service using Rest client or curl
 ```bash
 curl -d "{\"query\":\"SELECT * FROM rnacen.rna ORDER BY upi ASC\",\"fileName\":\"/tmp/testdata.csv\"}" -H "Content-Type: application/json" http://localhost:1234/execute-query
 ```
+The result is saved in /tmp/testdata.zip inside the docker container
