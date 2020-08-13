@@ -30,20 +30,31 @@ object QueryRegistry {
     println(s"got query '${queryString}' to store to '${query.fileName}'")
     val queryResult = sql"#$queryString".as(ResultMap)
 
-    Await.result(db.run(queryResult).map((result: Seq[Map[String, String]]) =>{
-      val csvData: List[Array[String]] = toCSV(result)
-      val fileName = query.fileName.replace("csv", "zip")
-      val zos = new ZipOutputStream(new FileOutputStream(fileName))
-      zos.putNextEntry(new ZipEntry(new File(query.fileName).getName)); // create a zip entry and add it to ZipOutputStream
+    try {
+      Await.result(db.run(queryResult).map((result: Seq[Map[String, String]]) => {
+        val csvData: List[Array[String]] = toCSV(result)
+        val fileName = query.fileName.replace("csv", "zip")
+        val zos = new ZipOutputStream(new FileOutputStream(fileName))
+        zos.putNextEntry(new ZipEntry(new File(query.fileName).getName)); // create a zip entry and add it to ZipOutputStream
 
-      val writer = new CSVWriter(new OutputStreamWriter(zos))
-      writer.writeAll(csvData.asJava)
-      writer.flush()
-      zos.closeEntry()
-      zos.close() // finally closing the ZipOutputStream to mark completion of ZIP file
-    }), Duration.Inf)
+        val writer = new CSVWriter(new OutputStreamWriter(zos))
+        writer.writeAll(csvData.asJava)
+        writer.flush()
+        zos.closeEntry()
+        zos.close() // finally closing the ZipOutputStream to mark completion of ZIP file
+      }), Duration.Inf)
 
-    Future { Done }
+      Future {
+        Done
+      }
+    } catch {
+      case e:Exception => {
+        println(s"Failed to execute query.The reason ${e.getMessage}")
+        Future {
+          Done
+        }
+      }
+    }
   }
 
   private def toCSV(list: Seq[Map[String, String]]):List[Array[String]] = {
